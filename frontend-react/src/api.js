@@ -1,10 +1,16 @@
-// ✅ Base da URL do backend vindo do .env da Vercel
-const API_BASE = import.meta.env.VITE_API_URL;
+// ✅ Base da URL do backend (Vercel/Render)
+// Se não existir variável, assume localhost para desenvolvimento
+let API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-// Se a variável não estiver definida, dá erro explícito (melhor para debug)
-if (!API_BASE) {
-  console.warn("⚠️ ERRO: VITE_API_URL não encontrada. Configure na Vercel.");
+// Remove barra final, se tiver (evita URL com //checkin)
+API_BASE = API_BASE.replace(/\/$/, "");
+
+// Log somente em modo dev
+if (!import.meta.env.VITE_API_URL) {
+  console.warn("⚠️ Variável VITE_API_URL não encontrada. Usando localhost temporariamente.");
 }
+
+console.log("🌐 API conectando em:", API_BASE);
 
 // ----------------------------------------
 // ✅ Registrar check-in
