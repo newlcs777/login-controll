@@ -1,4 +1,4 @@
-// server.js (versão correta para Render)
+// backend/server.js
 import express from "express";
 import cors from "cors";
 import nodemailer from "nodemailer";
@@ -10,14 +10,14 @@ app.use(express.json());
 // Banco em memória (POC)
 let events = [];
 
-// ENV da Render
+// Variáveis de ambiente (Render usa essas)
 const MANAGER_EMAIL = process.env.MANAGER_EMAIL;
 const MANAGER_PASS = process.env.MANAGER_EMAIL_PASS;
 
-// Envio de e-mail (opcional)
+// Função opcional para enviar e-mail
 async function notifyManager(entry) {
   if (!MANAGER_EMAIL || !MANAGER_PASS) {
-    console.log("⚠️ Email não configurado. Notificação não enviada.");
+    console.log("⚠️ Email não configurado. Notificação NÃO enviada.");
     return;
   }
 
@@ -35,11 +35,11 @@ async function notifyManager(entry) {
       to: MANAGER_EMAIL,
       subject: `Registro de ${entry.type.toUpperCase()} - ${entry.email}`,
       html: `
-        <h3>Novo registro</h3>
+        <h3>Novo registro de atividade</h3>
         <p><b>Email:</b> ${entry.email}</p>
         <p><b>Ação:</b> ${entry.type}</p>
         <p><b>Data/Hora:</b> ${new Date(entry.time).toLocaleString()}</p>
-      `,
+      `
     });
 
     console.log("📧 Email enviado ao gerente!");
@@ -48,30 +48,40 @@ async function notifyManager(entry) {
   }
 }
 
-// ROTAS
+// --------------------- ROTAS ---------------------
+
+// Health check
 app.get("/health", (_, res) => {
   res.json({ status: "API OK", timestamp: new Date() });
 });
 
+// Check-in
 app.post("/checkin", (req, res) => {
   const email = req.body.email;
   const entry = { email, type: "checkin", time: new Date() };
+
   events.push(entry);
   notifyManager(entry);
+
   res.json({ message: "Check-in registrado", entry });
 });
 
+// Check-out
 app.post("/checkout", (req, res) => {
   const email = req.body.email;
   const entry = { email, type: "checkout", time: new Date() };
+
   events.push(entry);
   notifyManager(entry);
+
   res.json({ message: "Check-out registrado", entry });
 });
 
+// Status do usuário
 app.get("/status", (req, res) => {
   const email = req.query.email;
   const last = events.filter((e) => e.email === email).pop();
+
   res.json({
     email,
     status: last?.type === "checkin" ? "online" : "offline",
@@ -79,6 +89,7 @@ app.get("/status", (req, res) => {
   });
 });
 
+// Listar eventos
 app.get("/events", (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || "200"), 500);
   const items = events
@@ -89,8 +100,11 @@ app.get("/events", (req, res) => {
   res.json({ items, total: items.length });
 });
 
-// ✅ Render exige isso:
+// --------------------- INICIAR SERVIDOR ---------------------
+
 const PORT = process.env.PORT || 3000;
+
+// Render OBRIGA especificar 0.0.0.0
 app.listen(PORT, "0.0.0.0", () =>
-  console.log(`🚀 Backend rodando na porta ${PORT}`)
+  console.log(`✅ Backend rodando na porta ${PORT}`)
 );
