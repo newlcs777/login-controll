@@ -1,4 +1,4 @@
-// server.js (versão para Vercel)
+// server.js (versão correta para Render)
 import express from "express";
 import cors from "cors";
 import nodemailer from "nodemailer";
@@ -10,15 +10,11 @@ app.use(express.json());
 // Banco em memória (POC)
 let events = [];
 
-// ------------------------------
-// VARIÁVEIS DA VERCEL
-// ------------------------------
+// ENV da Render
 const MANAGER_EMAIL = process.env.MANAGER_EMAIL;
 const MANAGER_PASS = process.env.MANAGER_EMAIL_PASS;
 
-// ------------------------------
-// Função para enviar email (opcional)
-// ------------------------------
+// Envio de e-mail (opcional)
 async function notifyManager(entry) {
   if (!MANAGER_EMAIL || !MANAGER_PASS) {
     console.log("⚠️ Email não configurado. Notificação não enviada.");
@@ -52,10 +48,7 @@ async function notifyManager(entry) {
   }
 }
 
-// ------------------------------
-// ROTAS DO SISTEMA
-// ------------------------------
-
+// ROTAS
 app.get("/health", (_, res) => {
   res.json({ status: "API OK", timestamp: new Date() });
 });
@@ -63,27 +56,22 @@ app.get("/health", (_, res) => {
 app.post("/checkin", (req, res) => {
   const email = req.body.email;
   const entry = { email, type: "checkin", time: new Date() };
-
   events.push(entry);
   notifyManager(entry);
-
   res.json({ message: "Check-in registrado", entry });
 });
 
 app.post("/checkout", (req, res) => {
   const email = req.body.email;
   const entry = { email, type: "checkout", time: new Date() };
-
   events.push(entry);
   notifyManager(entry);
-
   res.json({ message: "Check-out registrado", entry });
 });
 
 app.get("/status", (req, res) => {
   const email = req.query.email;
   const last = events.filter((e) => e.email === email).pop();
-
   res.json({
     email,
     status: last?.type === "checkin" ? "online" : "offline",
@@ -101,6 +89,8 @@ app.get("/events", (req, res) => {
   res.json({ items, total: items.length });
 });
 
-// ❌ IMPORTANTE: NÃO USAR app.listen() NA VERCEL
-// ✅ Exporta app para Vercel usar como serverless function
-export default app;
+// ✅ Render exige isso:
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, "0.0.0.0", () =>
+  console.log(`🚀 Backend rodando na porta ${PORT}`)
+);
