@@ -1,0 +1,20 @@
+version: "3.8"
+services:
+  backend:
+    build: ./backend
+    container_name: remote-work-api
+    ports:
+      - "3000:3000"
+    environment:
+      - MANAGER_EMAIL=seuemail@gmail.com
+      - MANAGER_EMAIL_PASS=suaSenhaDeApp
+    restart: always
+
+  frontend:
+    image: nginx:alpine
+    container_name: remote-work-front
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend-react/dist:/usr/share/nginx/html  # <-- se estiver usando Vite
+    restart: always
